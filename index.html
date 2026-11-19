@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="de" data-design="hub" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tiger Energy Project – Energy Experience Center</title>
+<style>
+:root {
+  --bg:#f5f6f7; --surface:#fff; --line:#dde2e8; --text:#1b222b; --muted:#68737f;
+  --solar:#c99a2e; --battery:#4f9a79; --grid:#5f7fbf; --heat:#c97b5a; --ev:#4aa0ab;
+  --panel:#eceef1; --accent:#3d5a78; --radius:16px; --anim-ms:450ms; color-scheme:light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#12151a; --surface:#1b2027; --line:#2c333c; --text:#e8ecf1; --muted:#93a0ad;
+    --solar:#d8b25a; --battery:#6fb596; --grid:#8aa3d6; --heat:#d99c82; --ev:#72b9c2;
+    --panel:#21262c; --accent:#a3b9cf; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#12151a; --surface:#1b2027; --line:#2c333c; --text:#e8ecf1; --muted:#93a0ad;
+  --solar:#d8b25a; --battery:#6fb596; --grid:#8aa3d6; --heat:#d99c82; --ev:#72b9c2;
+  --panel:#21262c; --accent:#a3b9cf; color-scheme:dark;
+}
+:root { box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px); }
+html { scroll-padding-top:env(safe-area-inset-top,0px); }
+*,*::before,*::after { box-sizing:inherit; }
+body { margin:0; background:var(--bg); color:var(--text); font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; }
+.app { max-width:1000px; margin:0 auto; padding:18px; display:grid; gap:14px; }
+.app-header { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+h1 { font-size:1.4rem; margin:0; font-weight:650; }
+h2 { font-size:1rem; margin:0; font-weight:650; }
+.muted { color:var(--muted); font-size:.85rem; margin:2px 0 0; }
+.header-actions { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.chip { border:1px solid var(--line); background:var(--surface); border-radius:99px; padding:4px 12px; font-size:.78rem; color:var(--muted); }
+.button { font:inherit; font-size:.85rem; padding:8px 14px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--text); cursor:pointer; transition:transform 150ms, border-color 150ms; }
+.button:hover { border-color:var(--accent); } .button:active { transform:scale(.97); }
+.button.primary { background:var(--accent); border-color:var(--accent); color:var(--surface); }
+.button[hidden] { display:none; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+.card.interactive { background:var(--panel); }
+.layout { display:grid; gap:14px; grid-template-columns:1fr; }
+.side { display:grid; gap:14px; align-content:start; }
+
+.kpis { display:grid; gap:12px; grid-template-columns:repeat(2,1fr); }
+.kpi { background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; }
+.kpi-label { color:var(--muted); font-size:.8rem; }
+.kpi-value { font-size:1.9rem; font-weight:650; font-variant-numeric:tabular-nums; line-height:1.2; }
+.kpi-unit { font-size:.9rem; color:var(--muted); margin-left:3px; font-weight:400; }
+
+.card-head { display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.segment { display:inline-flex; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.segment button { font:inherit; font-size:.85rem; padding:6px 14px; border:0; background:var(--surface); color:var(--text); cursor:pointer; transition:background var(--anim-ms); }
+.segment button[aria-pressed="true"] { background:var(--accent); color:var(--surface); }
+.legend { display:flex; flex-wrap:wrap; gap:4px 14px; font-size:.8rem; margin-bottom:8px; }
+.legend-item { display:inline-flex; align-items:center; gap:6px; }
+.swatch { width:11px; height:11px; border-radius:3px; }
+.swatch.tick { height:3px; border-radius:0; background:var(--text); }
+.chart-area { display:grid; grid-template-columns:auto 1fr; column-gap:8px; }
+.y-axis { position:relative; height:150px; min-width:2.2rem; font-size:.72rem; color:var(--muted); font-variant-numeric:tabular-nums; }
+.y-axis span { position:absolute; right:0; line-height:1; transform:translateY(-50%); }
+.day-chart { display:grid; grid-template-columns:repeat(24,1fr); gap:2px; height:150px; border-bottom:1px solid var(--line); }
+.day-column { position:relative; display:flex; flex-direction:column-reverse; height:100%; cursor:pointer; opacity:.55; transition:opacity 200ms; }
+.day-column.now { opacity:1; }
+.day-segment { width:100%; height:0; transition:height var(--anim-ms) ease; }
+.day-tick { position:absolute; left:-1px; right:-1px; bottom:0; height:3px; background:var(--text); transition:bottom var(--anim-ms) ease; }
+.hour-axis { display:flex; justify-content:space-between; color:var(--muted); font-size:.72rem; margin-top:4px; }
+.fine-print { font-size:.78rem; color:var(--muted); margin:0; }
+.control { display:grid; gap:4px; margin-bottom:14px; }
+.control-head { display:flex; justify-content:space-between; align-items:baseline; }
+.control-value { font-variant-numeric:tabular-nums; font-weight:600; }
+input[type="range"] { width:100%; height:32px; accent-color:var(--accent); }
+.switch-row { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-top:1px solid var(--line); }
+.switch { position:relative; width:52px; height:30px; flex:none; }
+.switch input { position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1; }
+.switch-track { position:absolute; inset:0; border-radius:99px; background:var(--surface); border:1px solid var(--line); transition:background var(--anim-ms); }
+.switch-track::after { content:""; position:absolute; top:3px; left:3px; width:22px; height:22px; border-radius:50%; background:var(--muted); transition:transform var(--anim-ms) cubic-bezier(.3,.8,.3,1), background var(--anim-ms); }
+.switch input:checked + .switch-track { background:var(--accent); border-color:var(--accent); }
+.switch input:checked + .switch-track::after { transform:translateX(22px); background:var(--surface); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+#flow-diagram { width:100%; height:auto; display:block; max-height:560px; }
+.link-track { fill:none; stroke:var(--line); stroke-width:2; }
+.link-flow { fill:none; stroke-linecap:round; stroke-dasharray:1 13; animation:flow 1s linear infinite; transition:opacity var(--anim-ms), stroke-width var(--anim-ms); }
+@keyframes flow { to { stroke-dashoffset:-14; } }
+.kind-solar { stroke:var(--solar); } .kind-battery { stroke:var(--battery); } .kind-grid { stroke:var(--grid); }
+.kind-heat { stroke:var(--heat); } .kind-ev { stroke:var(--ev); } .kind-house { stroke:var(--accent); }
+.node rect.node-box { fill:var(--surface); stroke:var(--line); stroke-width:1.5; transition:stroke var(--anim-ms); }
+.node.active rect.node-box { stroke-width:2; }
+.node { transition:opacity var(--anim-ms), transform var(--anim-ms) ease; } .node.off { opacity:0; pointer-events:none; }
+.node-label { fill:var(--muted); font-size:11px; text-anchor:middle; }
+.node-value { fill:var(--text); font-size:17px; font-weight:650; text-anchor:middle; font-variant-numeric:tabular-nums; }
+.battery-track { fill:var(--line); } .battery-fill { fill:var(--battery); transition:width var(--anim-ms); }
+.time-row { display:flex; align-items:center; gap:12px; margin-top:8px; }
+.time-row input { flex:1; }
+.time-label { min-width:5.2rem; text-align:right; font-variant-numeric:tabular-nums; font-weight:600; }
+@media (min-width:600px) { .kpis { grid-template-columns:repeat(4,1fr); } }
+@media (min-width:900px) { .layout { grid-template-columns:1.25fr 1fr; } }
+@media (prefers-reduced-motion: reduce) { :root { --anim-ms:0ms; } .link-flow { animation:none; } }
+
+.node rect.node-box, .link-track, .link-flow { transition-property:stroke, stroke-width, opacity, rx; }
+html[data-design="pipeline"] { --radius:6px; }
+html[data-design="pipeline"] .kpis { order:3; }
+html[data-design="pipeline"] .fine-print { order:4; }
+html[data-design="pipeline"] .layout { grid-template-columns:1fr; }
+html[data-design="pipeline"] .node rect.node-box { rx:6px; }
+html[data-design="pipeline"] .link-flow { stroke-linecap:butt; stroke-dasharray:6 8; }
+html[data-design="pipeline"] .kpi-value { font-size:1.5rem; }
+html[data-design="radial"] { --radius:28px; }
+html[data-design="radial"] .kpi { background:transparent; border:0; border-left:2px solid var(--line); border-radius:0; padding:2px 10px; }
+html[data-design="radial"] .kpi-value { font-size:2.4rem; font-weight:500; }
+html[data-design="radial"] .card { border:0; background:var(--panel); }
+html[data-design="radial"] .card.interactive { background:var(--surface); border:1px solid var(--line); }
+html[data-design="radial"] .node rect.node-box { rx:32px; }
+@media (min-width:760px) { html[data-design="pipeline"] .side { grid-template-columns:1fr 1fr; } }
+@media (min-width:900px) { html[data-design="radial"] .layout { grid-template-columns:1fr 1.25fr; } html[data-design="radial"] .side { order:-1; } }
+
+.ico { fill:none; stroke:var(--muted); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; transition:stroke var(--anim-ms); }
+.ico-panel { fill:var(--accent); fill-opacity:.3; }
+.node.active .ico { stroke:var(--tone, var(--text)); }
+.tone-solar { --tone:var(--solar); } .tone-battery { --tone:var(--battery); } .tone-grid { --tone:var(--grid); }
+.tone-heat { --tone:var(--heat); } .tone-ev { --tone:var(--ev); } .tone-house { --tone:var(--accent); }
+.ico-window { fill:var(--solar); opacity:.15; transition:opacity var(--anim-ms); }
+.scene-fill { fill:var(--battery); transition:height var(--anim-ms), y var(--anim-ms); }
+.scene-sun { transform-box:fill-box; transform-origin:center; transition:transform var(--anim-ms), opacity var(--anim-ms); }
+.scene-fan { transform-box:fill-box; transform-origin:center; animation:spin 1s linear infinite; animation-play-state:paused; }
+.node.active .scene-fan { animation-play-state:running; }
+@keyframes spin { to { transform:rotate(360deg); } }
+.scene-bolt { fill:var(--ev); opacity:0; transition:opacity var(--anim-ms); }
+.node.active .scene-bolt { opacity:1; }
+html[data-design="scene"] { --radius:20px; }
+html[data-design="scene"] .node-value { font-size:18px; }
+@media (prefers-reduced-motion: reduce) { .scene-fan { animation:none; } }
+.digit-slot { display:inline-block; overflow:hidden; height:1.15em; line-height:1.15; vertical-align:top; }
+.digit-column { display:block; }
+.digit-column > span { display:block; height:1.15em; }
+.scene-arc { fill:none; stroke:var(--line); stroke-width:2; stroke-dasharray:3 8; stroke-linecap:round; }
+.scene-ground { stroke:var(--line); stroke-width:2; }
+html[data-design="arc"] { --radius:20px; }
+html[data-design="arc"] .node-value { font-size:18px; }
+
+/* Solar brand refresh */
+:root {
+  --brand-yellow:#f9af13; --brand-green:#65a730; --brand-blue:#24acd0; --brand-black:#000000;
+  --bg:#f4f7f2; --surface:#ffffff; --line:#dce5d8; --text:#172018; --muted:#687568;
+  --solar:var(--brand-yellow); --battery:var(--brand-green); --grid:var(--brand-blue);
+  --heat:#d18b35; --ev:#24acd0; --panel:#edf3e9; --accent:var(--brand-green);
+  --radius:20px; --anim-ms:450ms; color-scheme:light;
+}
+:root[data-theme="dark"] {
+  --bg:#101710; --surface:#19231a; --line:#344333; --text:#f0f5ed; --muted:#a7b5a1;
+  --solar:#f9af13; --battery:#83c64b; --grid:#45c4e5; --heat:#e8a64c; --ev:#45c4e5;
+  --panel:#202d21; --accent:#65a730; color-scheme:dark;
+}
+@media (prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --bg:#101710; --surface:#19231a; --line:#344333; --text:#f0f5ed; --muted:#a7b5a1;
+    --solar:#f9af13; --battery:#83c64b; --grid:#45c4e5; --heat:#e8a64c; --ev:#45c4e5;
+    --panel:#202d21; --accent:#65a730; color-scheme:dark;
+  }
+}
+body { background:
+  radial-gradient(ellipse at 8% 0%, color-mix(in srgb, var(--brand-yellow) 11%, transparent), transparent 34rem),
+  radial-gradient(ellipse at 100% 8%, color-mix(in srgb, var(--brand-blue) 10%, transparent), transparent 32rem),
+  var(--bg); }
+.app { max-width:1240px; padding:clamp(16px,3vw,32px); gap:18px; }
+.app-header { align-items:center; padding:18px 20px; border:1px solid var(--line); border-radius:24px;
+  background:color-mix(in srgb,var(--surface) 90%,transparent); box-shadow:0 12px 36px #0000000b; }
+h1 { color:var(--brand-black); font-size:clamp(1.35rem,2.6vw,1.9rem); letter-spacing:-.045em; font-weight:850; }
+:root[data-theme="dark"] h1 { color:#fff; }
+@media (prefers-color-scheme:dark) { :root:not([data-theme="light"]) h1 { color:#fff; } }
+.app-header .muted { font-size:.92rem; }
+.card,.kpi { border-radius:22px; box-shadow:0 12px 32px #0000000a; }
+.card { padding:20px; }
+.card.interactive { background:linear-gradient(145deg,var(--panel),var(--surface)); }
+.kpi { position:relative; overflow:hidden; padding:16px 18px; }
+.kpi::before { content:""; position:absolute; inset:0 auto 0 0; width:4px; background:linear-gradient(var(--brand-yellow),var(--brand-green),var(--brand-blue)); }
+.kpi-value { letter-spacing:-.045em; }
+.button { border-radius:12px; font-weight:650; }
+.button.primary { background:var(--brand-green); border-color:var(--brand-green); color:#fff; }
+.button.primary:hover { filter:brightness(1.06); }
+.segment { border-radius:12px; padding:3px; background:var(--panel); }
+.segment button { border-radius:9px; background:transparent; padding:7px 12px; }
+.segment button[aria-pressed="true"] { background:var(--brand-green); color:#fff; box-shadow:0 3px 10px #65a73035; }
+.chip { background:var(--panel); }
+.control input[type="number"], .control select, .field-input {
+  width:100%; min-height:42px; border:1px solid var(--line); border-radius:12px;
+  padding:9px 12px; background:var(--surface); color:var(--text); font:inherit;
+}
+.control input[type="number"]:focus, .control select:focus { outline:2px solid var(--brand-blue); outline-offset:2px; }
+.control-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.control-grid .control { min-width:0; }
+#theme-toggle { white-space:nowrap; }
+#flow-diagram { filter:drop-shadow(0 4px 8px #00000008); }
+@media (max-width:600px) {
+  .app-header { padding:15px; }
+  .header-actions { width:100%; }
+  #design-switch { max-width:100%; overflow-x:auto; }
+  .control-grid { grid-template-columns:1fr; }
+  .card { padding:15px; }
+}
+
+
+/* TIGER ENERGY PROJECT – cinematic, high-contrast energy interface */
+:root {
+  --night:#06141e; --night-2:#091d2a; --panel-deep:#0d2634; --panel-soft:#102f3e;
+  --brand-yellow:#f9af13; --brand-green:#65a730; --brand-blue:#24acd0;
+  --bg:var(--night); --surface:var(--panel-deep); --panel:var(--panel-soft);
+  --line:#214454; --text:#f3f8fa; --muted:#a5bdc7; --accent:var(--brand-blue);
+  --solar:var(--brand-yellow); --battery:var(--brand-green); --grid:var(--brand-blue);
+  --heat:#ffbf58; --ev:#42c8e8; --radius:20px; color-scheme:dark;
+}
+:root[data-theme="light"] {
+  --bg:#edf4f5; --surface:#ffffff; --panel:#e3eef1; --line:#c4d8df;
+  --text:#102632; --muted:#526d78; --accent:#087f9f;
+  --solar:#d99500; --battery:#4f8e22; --grid:#078eaf; --heat:#bd7624; --ev:#078eaf;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:light) {
+  :root:not([data-theme="dark"]):not([data-theme="light"]) {
+    --bg:#edf4f5; --surface:#ffffff; --panel:#e3eef1; --line:#c4d8df;
+    --text:#102632; --muted:#526d78; --accent:#087f9f;
+    --solar:#d99500; --battery:#4f8e22; --grid:#078eaf; --heat:#bd7624; --ev:#078eaf;
+    color-scheme:light;
+  }
+}
+body {
+  background:
+    radial-gradient(ellipse at 12% -8%, #f9af1324, transparent 32rem),
+    radial-gradient(ellipse at 100% 4%, #24acd02b, transparent 36rem),
+    linear-gradient(145deg,var(--bg),#06121b 85%);
+  color:var(--text);
+}
+:root[data-theme="light"] body { background:radial-gradient(ellipse at 10% 0%,#f9af1324,transparent 30rem),radial-gradient(ellipse at 100% 0%,#24acd01c,transparent 34rem),var(--bg); }
+.app { max-width:1380px; padding:clamp(14px,2.5vw,32px); gap:18px; }
+.app-header {
+  position:relative; overflow:hidden; align-items:center; padding:clamp(18px,2.5vw,30px);
+  border:1px solid #2b596b; border-radius:26px;
+  background:linear-gradient(112deg,#071923 0%,#0b2a3a 58%,#0b3444 100%);
+  box-shadow:0 18px 50px #0005, inset 0 1px #ffffff12;
+}
+.app-header::after { content:""; position:absolute; width:340px; height:180px; right:12%; top:-125px; border-radius:50%; border:1px solid #24acd055; box-shadow:0 0 0 18px #24acd00b,0 0 0 38px #24acd008; pointer-events:none; }
+.brand-kicker { margin:0 0 7px; color:var(--brand-yellow); font-size:.72rem; font-weight:850; letter-spacing:.2em; }
+.brand-kicker span { color:var(--brand-blue); padding:0 5px; }
+h1 { color:#fff!important; font-size:clamp(1.45rem,3vw,2.25rem); font-weight:850; letter-spacing:-.045em; line-height:1.08; }
+.app-header .muted { color:#b7d0da; margin-top:8px; font-size:.93rem; }
+.header-actions { position:relative; z-index:1; gap:8px; }
+.button { border-radius:12px; border:1px solid #376071; background:#102b39; color:#edf8fb; font-weight:700; transition:transform .18s,border-color .18s,box-shadow .18s,background .18s; }
+.button:hover { border-color:var(--brand-blue); box-shadow:0 0 0 3px #24acd01c; }
+.button.primary { color:#08151c; background:linear-gradient(110deg,var(--brand-yellow),#ffd05c); border-color:var(--brand-yellow); box-shadow:0 6px 20px #f9af1328; }
+:root[data-theme="light"] .button { color:var(--text); background:var(--surface); border-color:var(--line); }
+:root[data-theme="light"] .button.primary { color:#101a1e; background:var(--brand-yellow); }
+#theme-toggle { white-space:nowrap; }
+.chip { background:#102b39; color:#c1d7df; border-color:#376071; }
+.segment { border:1px solid var(--line); border-radius:13px; padding:3px; background:#061923; }
+.segment button { color:#b9d0d9; background:transparent; border-radius:9px; padding:7px 12px; font-weight:650; }
+.segment button[aria-pressed="true"] { color:#06141e; background:var(--brand-yellow); box-shadow:0 3px 14px #f9af1338; }
+:root[data-theme="light"] .segment { background:#dce9ed; }
+:root[data-theme="light"] .segment button { color:#31505c; }
+:root[data-theme="light"] .segment button[aria-pressed="true"] { color:#15232a; }
+.kpis { gap:12px; }
+.kpi,.card { border:1px solid var(--line); background:linear-gradient(145deg,var(--surface),color-mix(in srgb,var(--surface) 86%,var(--brand-blue))); border-radius:20px; box-shadow:0 14px 36px #0003,inset 0 1px #ffffff0a; }
+.kpi { position:relative; overflow:hidden; min-height:112px; padding:17px 18px; }
+.kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(var(--brand-yellow),var(--brand-blue)); }
+.kpi-label { color:var(--muted); font-size:.77rem; font-weight:750; letter-spacing:.08em; text-transform:uppercase; }
+.kpi-value { margin-top:7px; font-size:clamp(1.75rem,3vw,2.35rem); font-weight:850; letter-spacing:-.055em; }
+.kpi:nth-child(1) .kpi-value { color:var(--brand-yellow); }
+.kpi:nth-child(2) .kpi-value { color:var(--brand-green); }
+.kpi:nth-child(3) .kpi-value { color:var(--brand-blue); }
+.kpi:nth-child(4) .kpi-value { color:var(--text); }
+.kpi-unit { color:var(--muted); }
+.layout { grid-template-columns:minmax(0,1.25fr) minmax(340px,.85fr); gap:16px; align-items:start; }
+.side { gap:16px; }
+.card { padding:clamp(16px,2vw,23px); }
+.card.interactive { background:linear-gradient(145deg,var(--panel),var(--surface)); border-color:#2a5969; }
+.card-head { margin-bottom:15px; }
+.card-head h2 { font-size:1.04rem; font-weight:800; letter-spacing:-.02em; }
+.card-head h2::before { content:""; display:inline-block; width:8px; height:8px; margin:0 9px 1px 0; border-radius:50%; background:var(--brand-yellow); box-shadow:0 0 12px #f9af1380; }
+#flow-diagram { max-height:600px; }
+.node rect.node-box { fill:var(--surface); stroke:var(--line); }
+.node.active rect.node-box { stroke:var(--brand-blue); filter:drop-shadow(0 0 5px #24acd040); }
+.node-value { font-weight:800; }
+.link-track { stroke:color-mix(in srgb,var(--line) 80%,var(--brand-blue)); }
+.link-flow { filter:drop-shadow(0 0 3px currentColor); }
+.time-row { padding-top:12px; border-top:1px solid var(--line); }
+.time-row input { accent-color:var(--brand-yellow); }
+.time-label { color:var(--brand-yellow); }
+.control { margin-bottom:16px; }
+.control label { color:var(--text); font-weight:650; font-size:.9rem; }
+.control-value { color:var(--brand-blue); font-weight:800; }
+input[type="range"] { accent-color:var(--brand-yellow); }
+.control input[type="number"],.control select { min-height:44px; border:1px solid var(--line); border-radius:12px; background:var(--bg); color:var(--text); padding:9px 12px; font:inherit; }
+.control input[type="number"]:focus,.control select:focus { outline:2px solid var(--brand-blue); outline-offset:2px; }
+.switch-row { border-color:var(--line); font-weight:650; }
+.switch-track { background:var(--bg); border-color:var(--line); }
+.switch input:checked + .switch-track { background:var(--brand-green); border-color:var(--brand-green); }
+.switch input:checked + .switch-track::after { background:#fff; }
+.day-chart { gap:3px; }
+.day-column { border-radius:5px 5px 0 0; overflow:hidden; }
+.day-segment { filter:saturate(1.18); }
+.legend { gap:8px 14px; color:var(--muted); }
+.fine-print { color:var(--muted); line-height:1.55; }
+#assumptions { padding:4px 4px 12px; max-width:1100px; }
+:focus-visible { outline:2px solid var(--brand-yellow); outline-offset:3px; }
+@media (max-width:900px) { .layout { grid-template-columns:1fr; } .side { grid-template-columns:1fr 1fr; } }
+@media (max-width:650px) {
+  .app-header { align-items:flex-start; }
+  .header-actions { width:100%; }
+  #design-switch { order:5; width:100%; overflow-x:auto; }
+  .side { grid-template-columns:1fr; }
+  .kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .kpi { min-height:96px; padding:13px; }
+  .control-grid { grid-template-columns:1fr 1fr; }
+  .segment button { padding:7px 9px; font-size:.78rem; }
+}
+@media (prefers-reduced-motion:reduce) { *,*::before,*::after { scroll-behavior:auto!important; transition-duration:0.01ms!important; animation-duration:0.01ms!important; } }
+
+</style>
+</head>
+<body>
+<main class="app">
+  <header class="app-header">
+    <div>
+      <p class="brand-kicker">TIGER ENERGY PROJECT <span>•</span> ENERGY EXPERIENCE</p>
+      <h1>Deine Energie. Live erleben.</h1>
+      <p class="muted">Solar, Speicher und intelligente Energieflüsse – verständlich in einer Ansicht.</p>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="button" id="theme-toggle" aria-label="Farbschema wechseln">◐ Design: Dark</button>
+      <div class="segment" id="design-switch" aria-label="Design"><button type="button" data-design="hub" aria-pressed="true">Hub</button><button type="button" data-design="pipeline" aria-pressed="false">Pipeline</button><button type="button" data-design="radial" aria-pressed="false">Radial</button><button type="button" data-design="scene" aria-pressed="false">Szene</button><button type="button" data-design="arc" aria-pressed="false">Sonnenbahn</button></div>
+      <span class="chip" id="data-source"></span>
+      <button type="button" class="button" id="reset-import" hidden>Platzhalterdaten</button>
+      <label class="button primary">PV*SOL-CSV laden<input type="file" id="input-file" accept=".csv,.txt" hidden></label>
+    </div>
+  </header>
+
+  <section class="kpis" aria-label="Ergebnisse">
+    <div class="kpi"><div class="kpi-label">Autarkie</div><div class="kpi-value"><span data-kpi="autarkyPercent">0</span><span class="kpi-unit">%</span></div></div>
+    <div class="kpi"><div class="kpi-label">Eigenverbrauch</div><div class="kpi-value"><span data-kpi="selfConsumptionPercent">0</span><span class="kpi-unit">%</span></div></div>
+    <div class="kpi"><div class="kpi-label">Vorteil pro Jahr</div><div class="kpi-value"><span data-kpi="yearlyBenefitEur">0</span><span class="kpi-unit">€</span></div></div>
+    <div class="kpi"><div class="kpi-label">Amortisation</div><div class="kpi-value"><span data-kpi="paybackYears">0</span><span class="kpi-unit" id="payback-unit">Jahre</span></div></div>
+  </section>
+
+  <div class="layout">
+    <section class="card" aria-label="Energiefluss">
+      <div class="card-head">
+        <h2>Energiefluss</h2>
+        <div class="segment" id="season-switch">
+          <button type="button" data-season="winter" aria-pressed="false">Winter</button>
+          <button type="button" data-season="spring" aria-pressed="false">Frühling</button>
+          <button type="button" data-season="summer" aria-pressed="true">Sommer</button>
+          <button type="button" data-season="autumn" aria-pressed="false">Herbst</button>
+        </div>
+      </div>
+      <svg id="flow-diagram" viewBox="0 0 420 450" role="img" aria-label="Energiefluss zwischen Solar, Haus, Speicher und Netz"></svg>
+      <div class="time-row">
+        <button type="button" class="button" id="play-button">▶ Tag abspielen</button>
+        <input type="range" id="input-hour" min="0" max="23" step="1" value="12" aria-label="Uhrzeit">
+        <span class="time-label" id="output-hour"></span>
+      </div>
+    </section>
+
+    <div class="side">
+      <section class="card interactive" aria-label="Konfiguration">
+        <div class="card-head"><h2>Konfiguration</h2></div>
+        <div class="control"><div class="control-head"><label for="input-pv">PV-Leistung</label><span class="control-value" id="output-pv"></span></div><input type="range" id="input-pv"></div>
+        <div class="control"><div class="control-head"><label for="input-battery">Speicher</label><span class="control-value" id="output-battery"></span></div><input type="range" id="input-battery"></div>
+        <div class="control"><div class="control-head"><label for="input-household">Haushaltsverbrauch</label><span class="control-value" id="output-household"></span></div><input type="range" id="input-household"></div>
+        <div class="control-grid">
+          <div class="control">
+            <div class="control-head"><label for="input-feed-in">Einspeisevergütung</label></div>
+            <input type="number" id="input-feed-in" min="0" max="30" step="0.1" value="8" inputmode="decimal" aria-describedby="feed-in-hint">
+            <p class="fine-print" id="feed-in-hint">Cent pro kWh</p>
+          </div>
+          <div class="control">
+            <div class="control-head"><label for="input-orientation">Ausrichtung</label></div>
+            <select id="input-orientation">
+              <option value="S">Süd</option><option value="SO">Südost</option><option value="SW">Südwest</option>
+              <option value="O">Ost</option><option value="W">West</option><option value="NO">Nordost</option>
+              <option value="NW">Nordwest</option><option value="N">Nord</option><option value="FLAT">Flachdach</option>
+            </select>
+          </div>
+        </div>
+        <div class="switch-row"><span id="label-heat-pump">Wärmepumpe</span><label class="switch"><input type="checkbox" id="input-heat-pump" aria-labelledby="label-heat-pump"><span class="switch-track"></span></label></div>
+        <div class="switch-row"><span id="label-ev">Wallbox mit E-Auto</span><label class="switch"><input type="checkbox" id="input-ev" aria-labelledby="label-ev"><span class="switch-track"></span></label></div>
+      </section>
+      <section class="card" aria-label="Typischer Tag">
+        <div class="card-head"><h2>Typischer Tag</h2></div>
+        <div class="legend" id="day-legend"></div>
+        <div class="chart-area">
+          <div class="y-axis" id="day-y-axis"><span style="top:0" data-y="top"></span><span style="top:50%" data-y="mid"></span><span style="top:100%">0</span></div>
+          <div><div class="day-chart" id="day-chart"></div><div class="hour-axis"><span>0 Uhr</span><span>6</span><span>12</span><span>18</span><span>24</span></div></div>
+        </div>
+      </section>
+    </div>
+  </div>
+  <p class="fine-print" id="assumptions"></p>
+</main>
+
+<script>
+
+const SVG_NAMESPACE = "http://www.w3.org/2000/svg";
+const FLOW_NODES = [
+  { id: "solar", label: "Solar", x: 210, y: 50, kind: "solar" },
+  { id: "house", label: "Haus", x: 210, y: 230, kind: "house" },
+  { id: "battery", label: "Speicher", x: 62, y: 230, kind: "battery" },
+  { id: "grid", label: "Netz", x: 358, y: 230, kind: "grid" },
+  { id: "heatPump", label: "Wärmepumpe", x: 105, y: 400, kind: "heat" },
+  { id: "wallbox", label: "E-Auto", x: 315, y: 400, kind: "ev" },
+];
+const FLOW_LINKS = [
+  { id: "solarToHouse", path: "M210,82 L210,198", kind: "solar", readKw: (d, hour) => d.day.direct[hour] },
+  { id: "solarToBattery", path: "M154,50 C62,50 62,120 62,198", kind: "solar", readKw: (d, hour) => d.day.toBattery[hour] },
+  { id: "solarToGrid", path: "M266,50 C358,50 358,120 358,198", kind: "solar", readKw: (d, hour) => d.day.feedIn[hour] },
+  { id: "batteryToHouse", path: "M118,230 L154,230", kind: "battery", readKw: (d, hour) => d.day.fromBattery[hour] },
+  { id: "gridToHouse", path: "M302,230 L266,230", kind: "grid", readKw: (d, hour) => d.day.fromGrid[hour] },
+  { id: "houseToHeatPump", path: "M180,262 C180,335 105,325 105,368", kind: "heat", readKw: (d, hour) => d.heatPumpKwh[hour] },
+  { id: "houseToWallbox", path: "M240,262 C240,335 315,325 315,368", kind: "ev", readKw: (d, hour) => d.evKwh[hour] },
+];
+const flowElements = { nodes: {}, links: {}, tracks: {} };
+
+function createSvgElement(tagName, attributes = {}, parent = null) {
+  const element = document.createElementNS(SVG_NAMESPACE, tagName);
+  Object.entries(attributes).forEach(([name, value]) => element.setAttribute(name, value));
+  if (parent) parent.appendChild(element);
+  return element;
+}
+
+const SCENE_ICON_DRAWERS = {
+  solar: (group, element) => {
+    element.sunGroup = createSvgElement("g", { class: "scene-sun" }, group);
+    createSvgElement("circle", { class: "ico", cx: 0, cy: -10, r: 13 }, element.sunGroup);
+    for (let rayIndex = 0; rayIndex < 8; rayIndex += 1) {
+      const angle = (rayIndex * Math.PI) / 4;
+      createSvgElement("line", { class: "ico", x1: Math.cos(angle) * 20, y1: -10 + Math.sin(angle) * 20, x2: Math.cos(angle) * 28, y2: -10 + Math.sin(angle) * 28 }, element.sunGroup);
+    }
+    createSvgElement("path", { class: "ico ico-panel", d: "M-30,22 H30 L22,40 H-38 Z" }, group);
+    createSvgElement("path", { class: "ico", d: "M-9,22 L-17,40 M12,22 L4,40" }, group);
+  },
+  house: (group, element) => {
+    createSvgElement("path", { class: "ico", d: "M-64,-6 L0,-58 L64,-6 Z" }, group);
+    createSvgElement("path", { class: "ico", d: "M-50,-6 V52 H50 V-6" }, group);
+    createSvgElement("path", { class: "ico ico-panel", d: "M14,-46 L44,-22 L38,-14 L8,-38 Z" }, group);
+    element.windows = [-32, 20].map((offsetX) => createSvgElement("rect", { class: "ico-window", x: offsetX, y: 4, width: 14, height: 14, rx: 2 }, group));
+    createSvgElement("rect", { class: "ico", x: -8, y: 24, width: 16, height: 28, rx: 2 }, group);
+  },
+  battery: (group, element) => {
+    createSvgElement("rect", { class: "ico", x: -22, y: -30, width: 44, height: 68, rx: 6 }, group);
+    createSvgElement("rect", { class: "ico", x: -8, y: -38, width: 16, height: 8, rx: 2 }, group);
+    element.fillBar = createSvgElement("rect", { class: "scene-fill", x: -17, y: 33, width: 34, height: 0, rx: 3 }, group);
+  },
+  grid: (group) => {
+    createSvgElement("path", { class: "ico", d: "M0,-44 L-18,44 M0,-44 L18,44 M-26,-24 H26 M-20,-6 H20 M-14,14 H14 M-11,-6 L14,14 M11,-6 L-14,14" }, group);
+  },
+  heatPump: (group, element) => {
+    createSvgElement("rect", { class: "ico", x: -36, y: -26, width: 72, height: 54, rx: 6 }, group);
+    createSvgElement("circle", { class: "ico", cx: 0, cy: 1, r: 19 }, group);
+    element.fan = createSvgElement("g", { class: "scene-fan" }, group);
+    createSvgElement("circle", { cx: 0, cy: 1, r: 14, fill: "none" }, element.fan);
+    [0, 120, 240].forEach((angleDegrees) => {
+      const radians = (angleDegrees * Math.PI) / 180;
+      createSvgElement("line", { class: "ico", x1: 0, y1: 1, x2: Math.cos(radians) * 14, y2: 1 + Math.sin(radians) * 14 }, element.fan);
+    });
+  },
+  wallbox: (group, element) => {
+    createSvgElement("path", { class: "ico", d: "M-48,24 V8 Q-48,2 -42,0 L-30,-16 H18 L32,0 H44 Q50,2 50,8 V24 Z" }, group);
+    [-26, 28].forEach((wheelX) => createSvgElement("circle", { class: "ico", cx: wheelX, cy: 26, r: 8 }, group));
+    element.bolt = createSvgElement("path", { class: "scene-bolt", d: "M4,-46 L-6,-30 H1 L-3,-18 L9,-35 H2 Z" }, group);
+  },
+};
+
+function buildSceneNode(group, node, layout) {
+  const element = { group };
+  group.classList.add(`tone-${node.kind}`);
+  (layout.drawerOverrides?.[node.id] ?? SCENE_ICON_DRAWERS[node.id])(group, element);
+  if (layout.sunArc && node.id === "solar") group.style.transform = `translate(${node.x}px, ${node.y}px)`;
+  else group.setAttribute("transform", `translate(${node.x},${node.y})`);
+  const [valueOffsetY, labelOffsetY] = layout.textOffsets?.[node.id] ?? [70, 86];
+  element.valueText = createSvgElement("text", { class: "node-value", x: 0, y: valueOffsetY }, group);
+  element.labelText = createSvgElement("text", { class: "node-label", x: 0, y: labelOffsetY }, group);
+  element.labelText.textContent = node.label;
+  return element;
+}
+
+const FLOW_LAYOUTS = {
+  arc: {
+    isScene: true,
+    viewBox: "0 0 460 540",
+    sunArc: { centerX: 230, centerY: 288, radius: 200 },
+    sunTargets: { solarToHouse: [230, 234], solarToBattery: [80, 246], solarToGrid: [390, 240] },
+    textOffsets: { solar: [46, 62] },
+    drawerOverrides: {
+      solar: (group, element) => {
+        element.sunGroup = createSvgElement("g", { class: "scene-sun" }, group);
+        createSvgElement("circle", { class: "ico", cx: 0, cy: 0, r: 13 }, element.sunGroup);
+        for (let rayIndex = 0; rayIndex < 8; rayIndex += 1) {
+          const angle = (rayIndex * Math.PI) / 4;
+          createSvgElement("line", { class: "ico", x1: Math.cos(angle) * 20, y1: Math.sin(angle) * 20, x2: Math.cos(angle) * 28, y2: Math.sin(angle) * 28 }, element.sunGroup);
+        }
+      },
+    },
+    backdrop: (svg) => {
+      createSvgElement("path", { class: "scene-arc", d: "M30,288 A200,200 0 0 1 430,288" }, svg);
+      createSvgElement("line", { class: "scene-ground", x1: 10, y1: 340, x2: 450, y2: 340 }, svg);
+    },
+    nodes: { solar: { x: 230, y: 88 }, house: { x: 230, y: 288 }, battery: { x: 80, y: 288 }, grid: { x: 390, y: 288 }, heatPump: { x: 120, y: 440 }, wallbox: { x: 340, y: 440 } },
+    paths: {
+      solarToHouse: "M230,120 L230,234", solarToBattery: "M210,116 L80,246", solarToGrid: "M250,116 L390,240",
+      batteryToHouse: "M104,288 L164,288", gridToHouse: "M358,288 L296,288",
+      houseToHeatPump: "M196,350 C196,395 120,380 120,412", houseToWallbox: "M264,350 C264,395 330,380 330,424",
+    },
+  },
+  scene: {
+    isScene: true,
+    viewBox: "0 0 460 500",
+    nodes: { solar: { x: 230, y: 60 }, house: { x: 230, y: 250 }, battery: { x: 70, y: 250 }, grid: { x: 390, y: 250 }, heatPump: { x: 110, y: 400 }, wallbox: { x: 350, y: 400 } },
+    paths: {
+      solarToHouse: "M230,102 L230,190", solarToBattery: "M196,70 C70,70 70,130 70,210", solarToGrid: "M264,70 C390,70 390,130 390,202",
+      batteryToHouse: "M100,250 L164,250", gridToHouse: "M362,250 L296,250",
+      houseToHeatPump: "M190,306 C190,350 110,330 110,372", houseToWallbox: "M270,306 C270,350 350,330 350,372",
+    },
+  },
+  hub: {
+    viewBox: "0 0 420 450",
+    nodes: { solar: { x: 210, y: 50 }, house: { x: 210, y: 230 }, battery: { x: 62, y: 230 }, grid: { x: 358, y: 230 }, heatPump: { x: 105, y: 400 }, wallbox: { x: 315, y: 400 } },
+    paths: {
+      solarToHouse: "M210,82 L210,198", solarToBattery: "M154,50 C62,50 62,120 62,198", solarToGrid: "M266,50 C358,50 358,120 358,198",
+      batteryToHouse: "M118,230 L154,230", gridToHouse: "M302,230 L266,230",
+      houseToHeatPump: "M180,262 C180,335 105,325 105,368", houseToWallbox: "M240,262 C240,335 315,325 315,368",
+    },
+  },
+  pipeline: {
+    viewBox: "0 0 660 320",
+    nodes: { solar: { x: 100, y: 50 }, battery: { x: 100, y: 160 }, grid: { x: 100, y: 270 }, house: { x: 350, y: 160 }, heatPump: { x: 580, y: 70 }, wallbox: { x: 580, y: 250 } },
+    paths: {
+      solarToHouse: "M156,50 C250,50 250,140 294,148", solarToBattery: "M100,82 L100,128", solarToGrid: "M44,60 C-10,85 -10,245 44,260",
+      batteryToHouse: "M156,160 L294,160", gridToHouse: "M156,270 C250,270 250,180 294,172",
+      houseToHeatPump: "M406,150 C480,150 500,70 524,70", houseToWallbox: "M406,170 C480,170 500,250 524,250",
+    },
+  },
+  radial: {
+    viewBox: "0 0 460 440",
+    nodes: { solar: { x: 230, y: 65 }, house: { x: 230, y: 235 }, battery: { x: 68, y: 182 }, grid: { x: 392, y: 182 }, heatPump: { x: 130, y: 372 }, wallbox: { x: 330, y: 372 } },
+    paths: {
+      solarToHouse: "M230,65 L230,235", solarToBattery: "M230,65 L68,182", solarToGrid: "M230,65 L392,182",
+      batteryToHouse: "M68,182 L230,235", gridToHouse: "M392,182 L230,235",
+      houseToHeatPump: "M230,235 L130,372", houseToWallbox: "M230,235 L330,372",
+    },
+  },
+};
+
+function buildFlowDiagram() {
+  const svg = document.getElementById("flow-diagram");
+  const layout = FLOW_LAYOUTS[state.design];
+  svg.replaceChildren();
+  svg.setAttribute("viewBox", layout.viewBox);
+  Object.assign(flowElements, { nodes: {}, links: {}, tracks: {} });
+  if (layout.backdrop) layout.backdrop(svg);
+  const positionedLinks = FLOW_LINKS.map((link) => ({ ...link, path: layout.paths[link.id] }));
+  const positionedNodes = FLOW_NODES.map((node) => ({ ...node, ...layout.nodes[node.id] }));
+
+  positionedLinks.forEach((link) => {
+    flowElements.tracks[link.id] = createSvgElement("path", { d: link.path, class: "link-track" }, svg);
+    flowElements.links[link.id] = createSvgElement("path", { d: link.path, class: `link-flow kind-${link.kind}`, opacity: 0 }, svg);
+  });
+  positionedNodes.forEach((node) => {
+    const group = createSvgElement("g", { class: "node" }, svg);
+    if (layout.isScene) { flowElements.nodes[node.id] = buildSceneNode(group, node, layout); return; }
+    createSvgElement("rect", { class: "node-box", x: node.x - 56, y: node.y - 32, width: 112, height: 64, rx: 14 }, group);
+    createSvgElement("text", { class: "node-label", x: node.x, y: node.y - 10 }, group).textContent = node.label;
+    const valueText = createSvgElement("text", { class: "node-value", x: node.x, y: node.y + 14 }, group);
+    const element = { group, valueText, labelText: group.querySelector(".node-label") };
+    if (node.id === "battery") {
+      createSvgElement("rect", { class: "battery-track", x: node.x - 44, y: node.y + 22, width: 88, height: 4, rx: 2 }, group);
+      element.fillBar = createSvgElement("rect", { class: "battery-fill", x: node.x - 44, y: node.y + 22, width: 0, height: 4, rx: 2 }, group);
+      valueText.setAttribute("y", node.y + 12);
+    }
+    flowElements.nodes[node.id] = element;
+  });
+}
+
+function setNodeActive(nodeId, isActive, kind) {
+  const { group } = flowElements.nodes[nodeId];
+  group.classList.toggle("active", isActive);
+  const nodeBox = group.querySelector(".node-box");
+  if (nodeBox) nodeBox.style.stroke = isActive ? `var(--${kind === "house" ? "accent" : kind})` : "";
+}
+
+function renderFlowDiagram() {
+  const typicalDay = currentSimulation.typicalDays[CONFIG.SEASON_MONTH_INDEX[state.season]];
+  const { hour } = state;
+
+  FLOW_LINKS.forEach((link) => {
+    const kilowatt = link.readKw(typicalDay, hour);
+    const element = flowElements.links[link.id];
+    const isFlowing = kilowatt > 0.02;
+    element.setAttribute("opacity", isFlowing ? 1 : 0);
+    element.style.strokeWidth = `${2.5 + Math.min(5, kilowatt * 0.9)}px`;
+    element.style.animationDuration = `${Math.max(0.5, 2 - kilowatt * 0.2)}s`;
+  });
+
+  const solarKw = typicalDay.solarKwh[hour];
+  const loadKw = typicalDay.loadKwh[hour];
+  const gridImportKw = typicalDay.day.fromGrid[hour];
+  const gridFeedInKw = typicalDay.day.feedIn[hour];
+  const batteryFill = typicalDay.day.batteryFillShare[hour];
+  const nodes = flowElements.nodes;
+
+  nodes.solar.valueText.textContent = `${kilowattFormat.format(solarKw)} kW`;
+  nodes.house.valueText.textContent = `${kilowattFormat.format(loadKw)} kW`;
+  nodes.grid.labelText.textContent = gridFeedInKw > gridImportKw ? "Einspeisung" : "Netzbezug";
+  nodes.grid.valueText.textContent = `${kilowattFormat.format(Math.max(gridImportKw, gridFeedInKw))} kW`;
+  nodes.battery.valueText.textContent = state.batteryKwh > 0 ? `${integerFormat.format(batteryFill * 100)} %` : "–";
+  if (FLOW_LAYOUTS[state.design].isScene) {
+    const fillHeight = 58 * batteryFill;
+    nodes.battery.fillBar.setAttribute("height", fillHeight);
+    nodes.battery.fillBar.setAttribute("y", 33 - fillHeight);
+  } else {
+    nodes.battery.fillBar.setAttribute("width", 88 * batteryFill);
+  }
+  nodes.heatPump.valueText.textContent = `${kilowattFormat.format(typicalDay.heatPumpKwh[hour])} kW`;
+  nodes.wallbox.valueText.textContent = `${kilowattFormat.format(typicalDay.evKwh[hour])} kW`;
+
+  setNodeActive("solar", solarKw > 0.02, "solar");
+  setNodeActive("house", true, "house");
+  setNodeActive("battery", typicalDay.day.toBattery[hour] > 0.02 || typicalDay.day.fromBattery[hour] > 0.02, "battery");
+  setNodeActive("grid", Math.max(gridImportKw, gridFeedInKw) > 0.02, "grid");
+  setNodeActive("heatPump", typicalDay.heatPumpKwh[hour] > 0.02, "heat");
+  setNodeActive("wallbox", typicalDay.evKwh[hour] > 0.02, "ev");
+  nodes.battery.group.classList.toggle("off", state.batteryKwh === 0);
+  nodes.heatPump.group.classList.toggle("off", !state.heatPumpEnabled);
+  nodes.wallbox.group.classList.toggle("off", !state.evEnabled);
+
+  if (FLOW_LAYOUTS[state.design].isScene) {
+    const sunShare = solarKw / Math.max(...typicalDay.solarKwh, 0.01);
+    nodes.solar.sunGroup.style.opacity = 0.25 + 0.75 * sunShare;
+    nodes.solar.sunGroup.style.transform = `scale(${0.8 + 0.2 * sunShare})`;
+    nodes.house.windows.forEach((windowElement) => { windowElement.style.opacity = 0.15 + 0.85 * Math.min(1, loadKw / 3); });
+  }
+  const trackVisibility = { solarToBattery: state.batteryKwh > 0, batteryToHouse: state.batteryKwh > 0, houseToHeatPump: state.heatPumpEnabled, houseToWallbox: state.evEnabled };
+  Object.entries(trackVisibility).forEach(([linkId, isVisible]) => { flowElements.tracks[linkId].style.opacity = isVisible ? 1 : 0; });
+  const arcLayout = FLOW_LAYOUTS[state.design];
+  if (arcLayout.sunArc) {
+    const [sunriseHour, sunsetHour] = CONFIG.SUN_HOURS[state.season];
+    const dayProgress = (hour + 0.5 - sunriseHour) / (sunsetHour - sunriseHour);
+    const isDaytime = dayProgress >= 0 && dayProgress <= 1;
+    const sunAngle = Math.PI * (1 - Math.min(1, Math.max(0, dayProgress)));
+    const sunX = arcLayout.sunArc.centerX + arcLayout.sunArc.radius * Math.cos(sunAngle);
+    const sunY = arcLayout.sunArc.centerY - arcLayout.sunArc.radius * Math.sin(sunAngle);
+    nodes.solar.group.style.transform = `translate(${sunX}px, ${sunY}px)`;
+    nodes.solar.group.classList.toggle("off", !isDaytime);
+    Object.entries(arcLayout.sunTargets).forEach(([linkId, [targetX, targetY]]) => {
+      const distance = Math.hypot(targetX - sunX, targetY - sunY);
+      const startX = sunX + ((targetX - sunX) / distance) * 32;
+      const startY = sunY + ((targetY - sunY) / distance) * 32;
+      const pathData = `M${startX},${startY} L${targetX},${targetY}`;
+      flowElements.tracks[linkId].setAttribute("d", pathData);
+      flowElements.links[linkId].setAttribute("d", pathData);
+      flowElements.tracks[linkId].style.opacity = isDaytime && (linkId !== "solarToBattery" || state.batteryKwh > 0) ? 1 : 0;
+    });
+  }
+  document.getElementById("output-hour").textContent = `${String(hour).padStart(2, "0")}:00 Uhr`;
+  document.getElementById("input-hour").value = hour;
+  dayChartColumns.forEach((column, columnHour) => column.element.classList.toggle("now", columnHour === hour));
+}
+
+function calculateMetrics(totals) {
+  const billWithoutSolar = totals.consumption * CONFIG.ELECTRICITY_PRICE_EUR_PER_KWH;
+  const billWithSolar = totals.fromGrid * CONFIG.ELECTRICITY_PRICE_EUR_PER_KWH - totals.feedIn * state.feedInTariffEurPerKwh;
+  let yearlyBenefitEur = billWithoutSolar - billWithSolar;
+  let investmentEur = state.pvKwp * CONFIG.COST_PV_EUR_PER_KWP + state.batteryKwh * CONFIG.COST_BATTERY_EUR_PER_KWH;
+  if (state.heatPumpEnabled) { yearlyBenefitEur += CONFIG.HEAT_PUMP_SAVING_VS_OLD_HEATING_EUR_PER_YEAR; investmentEur += CONFIG.COST_HEAT_PUMP_EUR; }
+  if (state.evEnabled) investmentEur += CONFIG.COST_WALLBOX_EUR;
+  return {
+    autarkyPercent: totals.consumption > 0 ? ((totals.direct + totals.fromBattery) / totals.consumption) * 100 : 0,
+    selfConsumptionPercent: totals.production > 0 ? ((totals.production - totals.feedIn) / totals.production) * 100 : 0,
+    yearlyBenefitEur,
+    paybackYears: yearlyBenefitEur > 0 && investmentEur > 0 ? investmentEur / yearlyBenefitEur : null,
+  };
+}
+
+function simulateDay(solarKwh, loadKwh, evNeedKwh, startEnergyKwh) {
+  const capacityKwh = state.batteryKwh;
+  const maxPowerKwh = CONFIG.BATTERY_MAX_POWER_KW;
+  const reserveKwh = capacityKwh * CONFIG.BATTERY_RESERVE_SHARE;
+  const oneWayEfficiency = Math.sqrt(CONFIG.BATTERY_ROUNDTRIP_EFFICIENCY);
+  const day = { direct: [], fromBattery: [], fromGrid: [], toBattery: [], feedIn: [], batteryFillShare: [], evKwh: [] };
+  let energyKwh = startEnergyKwh;
+  let evRemainingKwh = evNeedKwh;
+
+  HOURS.forEach((hour) => {
+    const directToHouse = Math.min(solarKwh[hour], loadKwh[hour]);
+    const surplus = solarKwh[hour] - directToHouse;
+    const deficit = loadKwh[hour] - directToHouse;
+    const charged = Math.min(surplus, maxPowerKwh, (capacityKwh - energyKwh) / oneWayEfficiency);
+    energyKwh += charged * oneWayEfficiency;
+    const available = Math.max(0, energyKwh - reserveKwh) * oneWayEfficiency;
+    const delivered = Math.min(deficit, maxPowerKwh, available);
+    energyKwh -= delivered / oneWayEfficiency;
+
+    const surplusAfterBattery = surplus - charged;
+    const evFromSolar = Math.min(surplusAfterBattery, CONFIG.WALLBOX_MAX_POWER_KW, evRemainingKwh);
+    evRemainingKwh -= evFromSolar;
+    const isGridChargeHour = hour >= CONFIG.EV_GRID_CHARGE_FROM_HOUR && hour <= CONFIG.EV_GRID_CHARGE_TO_HOUR;
+    const gridChargeHoursLeft = CONFIG.EV_GRID_CHARGE_TO_HOUR - hour + 1;
+    const evFromGrid = isGridChargeHour ? Math.min(CONFIG.WALLBOX_MAX_POWER_KW, evRemainingKwh / gridChargeHoursLeft) : 0;
+    evRemainingKwh -= evFromGrid;
+
+    day.direct.push(directToHouse + evFromSolar); day.toBattery.push(charged); day.feedIn.push(surplusAfterBattery - evFromSolar);
+    day.fromBattery.push(delivered); day.fromGrid.push(deficit - delivered + evFromGrid);
+    day.evKwh.push(evFromSolar + evFromGrid);
+    day.batteryFillShare.push(capacityKwh > 0 ? energyKwh / capacityKwh : 0);
+  });
+  return { day, endEnergyKwh: energyKwh };
+}
+
+function simulateYear() {
+  const totals = { consumption: 0, production: 0, direct: 0, fromBattery: 0, fromGrid: 0, toBattery: 0, feedIn: 0 };
+  const typicalDays = {};
+  CONFIG.DAYS_PER_MONTH.forEach((days, monthIndex) => {
+    const profiles = buildHourlyProfiles(monthIndex);
+    const warmUp = simulateDay(profiles.solarKwh, profiles.loadKwh, profiles.evNeedKwh, state.batteryKwh * 0.5);
+    const { day } = simulateDay(profiles.solarKwh, profiles.loadKwh, profiles.evNeedKwh, warmUp.endEnergyKwh);
+    const totalLoadKwh = HOURS.map((hour) => profiles.loadKwh[hour] + day.evKwh[hour]);
+    totals.consumption += sumList(totalLoadKwh) * days;
+    totals.production += sumList(profiles.solarKwh) * days;
+    ["direct", "fromBattery", "fromGrid", "toBattery", "feedIn"].forEach((key) => { totals[key] += sumList(day[key]) * days; });
+    typicalDays[monthIndex] = { day, ...profiles, evKwh: day.evKwh, loadKwh: totalLoadKwh };
+  });
+  return { totals, typicalDays };
+}
+
+const CONFIG = {
+  PV_KWP:        { min: 0, max: 20, step: 0.5, start: 8 },
+  BATTERY_KWH:   { min: 0, max: 20, step: 1,   start: 8 },
+  HOUSEHOLD_KWH: { min: 1500, max: 12000, step: 250, start: 3500 },
+  HEAT_PUMP_KWH_PER_YEAR: 4000,
+  EV_KWH_PER_YEAR: 2500,
+  DAYS_PER_MONTH: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+  PV_KWH_PER_KWP_BY_MONTH: [25, 50, 90, 125, 145, 150, 150, 130, 95, 60, 30, 20],
+  HEAT_PUMP_SHARE_BY_MONTH: [0.19, 0.16, 0.13, 0.08, 0.04, 0.02, 0.01, 0.01, 0.03, 0.08, 0.12, 0.13],
+  /* Sonnen-Seasons: Winter Nov-Feb, Frühling Mär-Apr, Sommer Mai-Aug, Herbst Sep-Okt.
+     Die Übergangszeiten nutzen bewusst denselben repräsentativen April-Sonnenverlauf. */
+  SEASON_MONTH_INDEX: { winter: 0, spring: 3, summer: 6, autumn: 3 },
+  SUN_HOURS: { winter: [8, 16.5], spring: [6.5, 19.5], summer: [5, 21.5], autumn: [6.5, 19.5] },
+  ORIENTATION_YIELD: { S:1, SO:0.95, SW:0.95, O:0.85, W:0.85, NO:0.72, NW:0.72, N:0.60, FLAT:0.90 },
+  BATTERY_ROUNDTRIP_EFFICIENCY: 0.92,
+  BATTERY_MAX_POWER_KW: 5,
+  WALLBOX_MAX_POWER_KW: 11,
+  EV_GRID_CHARGE_FROM_HOUR: 18,
+  EV_GRID_CHARGE_TO_HOUR: 22,
+  BATTERY_RESERVE_SHARE: 0.1,
+  ELECTRICITY_PRICE_EUR_PER_KWH: 0.35,
+  FEED_IN_TARIFF_EUR_PER_KWH: 0.08,
+  COST_PV_EUR_PER_KWP: 1400,
+  COST_BATTERY_EUR_PER_KWH: 700,
+  COST_HEAT_PUMP_EUR: 14000,
+  COST_WALLBOX_EUR: 1500,
+  HEAT_PUMP_SAVING_VS_OLD_HEATING_EUR_PER_YEAR: 700,
+  MAX_PAYBACK_YEARS_SHOWN: 30,
+  DIGIT_ROLL_MS: 350,
+  PLAY_STEP_MS: 650,
+  PLACEHOLDER_SOURCE_LABEL: "Platzhalterdaten",
+};
+
+const state = {
+  pvKwp: CONFIG.PV_KWP.start, batteryKwh: CONFIG.BATTERY_KWH.start, householdKwhPerYear: CONFIG.HOUSEHOLD_KWH.start,
+  heatPumpEnabled: false, evEnabled: false, feedInTariffEurPerKwh: 0.08, orientation: "S",
+  season: "summer", hour: 12, design: "hub", isPlaying: false, importedData: null,
+};
+let currentSimulation = null;
+let playTimerId = null;
+
+const HOURS = Array.from({ length: 24 }, (_, hour) => hour);
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const numberFormat = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
+const integerFormat = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+const kilowattFormat = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const axisFormat = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 });
+const sumList = (values) => values.reduce((sum, value) => sum + value, 0);
+
+let dayChartColumns = [];
+function roundUpToNiceNumber(value) {
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  return [1, 2, 2.5, 5, 10].find((step) => value / magnitude <= step + 1e-9) * magnitude;
+}
+
+function buildDayChart() {
+  const container = document.getElementById("day-chart");
+  const fillColors = ["var(--solar)", "var(--battery)", "var(--grid)"];
+  dayChartColumns = HOURS.map((hour) => {
+    const element = document.createElement("div");
+    element.className = "day-column";
+    element.addEventListener("click", () => { state.hour = hour; renderFlowDiagram(); });
+    const segments = fillColors.map((color) => {
+      const segment = document.createElement("div");
+      segment.className = "day-segment";
+      segment.style.background = color;
+      element.appendChild(segment);
+      return segment;
+    });
+    const tick = document.createElement("div");
+    tick.className = "day-tick";
+    element.appendChild(tick);
+    container.appendChild(element);
+    return { element, segments, tick };
+  });
+  const legend = document.getElementById("day-legend");
+  [["Direkt aus Solar", fillColors[0]], ["Aus Speicher", fillColors[1]], ["Aus Netz", fillColors[2]], ["Solarerzeugung", ""]].forEach(([label, color]) => {
+    const item = document.createElement("span");
+    item.className = "legend-item";
+    item.innerHTML = `<span class="swatch ${color ? "" : "tick"}" style="background:${color}"></span><span></span>`;
+    item.lastChild.textContent = label;
+    legend.appendChild(item);
+  });
+}
+
+function renderDayChart() {
+  const { day, solarKwh, loadKwh } = currentSimulation.typicalDays[CONFIG.SEASON_MONTH_INDEX[state.season]];
+  const maxKwh = roundUpToNiceNumber(Math.max(...solarKwh, ...loadKwh, 0.01));
+  const toPercent = (kwh) => `${(kwh / maxKwh) * 100}%`;
+  document.querySelector('[data-y="top"]').textContent = axisFormat.format(maxKwh);
+  document.querySelector('[data-y="mid"]').textContent = axisFormat.format(maxKwh / 2);
+  dayChartColumns.forEach((column, hour) => {
+    column.segments[0].style.height = toPercent(day.direct[hour]);
+    column.segments[1].style.height = toPercent(day.fromBattery[hour]);
+    column.segments[2].style.height = toPercent(day.fromGrid[hour]);
+    column.tick.style.bottom = toPercent(solarKwh[hour]);
+  });
+}
+
+function parseLocalizedNumber(text) {
+  const trimmed = String(text).trim();
+  const normalized = trimmed.includes(",") ? trimmed.replace(/\./g, "").replace(",", ".") : trimmed;
+  const value = Number(normalized);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function parsePvSolCsv(csvText) {
+  const lines = csvText.split(/\r?\n/).filter((line) => line.trim());
+  const delimiter = lines.some((line) => line.includes(";")) ? ";" : ",";
+  const headerIndex = lines.findIndex((line) => /(datum|date|zeit|time)/i.test(line) && line.split(delimiter).length >= 3);
+  if (headerIndex < 0) throw new Error("Kopfzeile nicht gefunden");
+
+  const headers = lines[headerIndex].split(delimiter).map((header) => header.trim());
+  const solarColumn = headers.findIndex((header) => /(pv|solar|erzeugung|generation)/i.test(header) && /kwh|kw/i.test(header));
+  const loadColumn = headers.findIndex((header) => /(verbrauch|consumption|last|load)/i.test(header) && !/(direkt|direct|speicher|storage)/i.test(header));
+  if (solarColumn < 0 || loadColumn < 0) throw new Error("Spalten für PV-Erzeugung und Verbrauch nicht gefunden");
+
+  const kwpMatch = lines.slice(0, headerIndex).join(" ").match(/([\d.,]+)\s*kWp/i);
+  const pvKwp = kwpMatch ? parseLocalizedNumber(kwpMatch[1]) : CONFIG.PV_KWP.start;
+
+  const solarSums = Array.from({ length: 12 }, () => Array(24).fill(0));
+  const loadSums = Array.from({ length: 12 }, () => Array(24).fill(0));
+  let parsedRows = 0;
+  lines.slice(headerIndex + 1).forEach((line) => {
+    const cells = line.split(delimiter);
+    const germanDate = cells[0].match(/(\d{1,2})\.(\d{1,2})\.(?:\d{2,4})?\D*(\d{1,2}):/);
+    const isoDate = cells[0].match(/\d{4}-(\d{2})-\d{2}[T ](\d{2}):/);
+    const monthIndex = germanDate ? Number(germanDate[2]) - 1 : isoDate ? Number(isoDate[1]) - 1 : -1;
+    const hour = germanDate ? Number(germanDate[3]) : isoDate ? Number(isoDate[2]) : -1;
+    if (monthIndex < 0 || monthIndex > 11 || hour < 0 || hour > 23) return;
+    solarSums[monthIndex][hour] += parseLocalizedNumber(cells[solarColumn]);
+    loadSums[monthIndex][hour] += parseLocalizedNumber(cells[loadColumn]);
+    parsedRows += 1;
+  });
+  if (parsedRows < 24) throw new Error("zu wenige Datenzeilen");
+
+  const toPerDay = (sums) => sums.map((hours, monthIndex) => hours.map((value) => value / CONFIG.DAYS_PER_MONTH[monthIndex]));
+  const solarKwhByMonth = toPerDay(solarSums);
+  const loadKwhByMonth = toPerDay(loadSums);
+  const annualLoadKwh = loadKwhByMonth.reduce((total, hours, monthIndex) => total + sumList(hours) * CONFIG.DAYS_PER_MONTH[monthIndex], 0);
+  if (annualLoadKwh <= 0 || pvKwp <= 0) throw new Error("keine verwertbaren Werte");
+  return { solarKwhByMonth, loadKwhByMonth, annualLoadKwh, pvKwp };
+}
+
+function normalizeToSumOne(values) {
+  const total = sumList(values);
+  return values.map((value) => (total === 0 ? 0 : value / total));
+}
+const gaussian = (hour, centerHour, width) => Math.exp(-((hour + 0.5 - centerHour) ** 2) / (2 * width ** 2));
+const buildSolarShape = (monthIndex) => normalizeToSumOne(HOURS.map((hour) => gaussian(hour, 13, 2.4 + 1.2 * (1 - Math.abs(monthIndex - 5.5) / 5.5))));
+const buildHouseholdShape = () => normalizeToSumOne(HOURS.map((hour) => 0.3 + 1.2 * gaussian(hour, 7.5, 1.2) + 1.6 * gaussian(hour, 19, 2)));
+const buildHeatPumpShape = () => normalizeToSumOne(HOURS.map((hour) => 1 + 0.3 * gaussian(hour, 6, 2) + 0.3 * gaussian(hour, 19, 2)));
+
+function buildHourlyProfiles(monthIndex) {
+  const days = CONFIG.DAYS_PER_MONTH[monthIndex];
+  let solarKwh, householdKwh;
+  if (state.importedData) {
+    const imported = state.importedData;
+    solarKwh = imported.solarKwhByMonth[monthIndex].map((value) => (value * state.pvKwp * CONFIG.ORIENTATION_YIELD[state.orientation]) / imported.pvKwp);
+    householdKwh = imported.loadKwhByMonth[monthIndex].map((value) => (value * state.householdKwhPerYear) / imported.annualLoadKwh);
+  } else {
+    const solarKwhPerDay = (state.pvKwp * CONFIG.PV_KWH_PER_KWP_BY_MONTH[monthIndex] * CONFIG.ORIENTATION_YIELD[state.orientation]) / days;
+    solarKwh = buildSolarShape(monthIndex).map((share) => share * solarKwhPerDay);
+    householdKwh = buildHouseholdShape().map((share) => (share * state.householdKwhPerYear) / 365);
+  }
+  const heatPumpShape = buildHeatPumpShape();
+  const heatPumpKwhPerDay = (CONFIG.HEAT_PUMP_KWH_PER_YEAR * CONFIG.HEAT_PUMP_SHARE_BY_MONTH[monthIndex]) / days;
+  const heatPumpKwh = HOURS.map((hour) => (state.heatPumpEnabled ? heatPumpKwhPerDay * heatPumpShape[hour] : 0));
+  const evNeedKwh = state.evEnabled ? CONFIG.EV_KWH_PER_YEAR / 365 : 0;
+  const loadKwh = HOURS.map((hour) => householdKwh[hour] + heatPumpKwh[hour]);
+  return { solarKwh, householdKwh, heatPumpKwh, evNeedKwh, loadKwh };
+}
+
+function isDigit(character) {
+  return /\d/.test(character);
+}
+
+function rollDigit(slot, oldDigit, newDigit, trend) {
+  const column = document.createElement("span");
+  column.className = "digit-column";
+  const order = trend >= 0 ? [oldDigit, newDigit] : [newDigit, oldDigit];
+  order.forEach((digit) => {
+    const cell = document.createElement("span");
+    cell.textContent = digit;
+    column.appendChild(cell);
+  });
+  slot.appendChild(column);
+
+  const frames = trend >= 0
+    ? [{ transform: "translateY(0)" }, { transform: "translateY(-50%)" }]
+    : [{ transform: "translateY(-50%)" }, { transform: "translateY(0)" }];
+  const animation = column.animate(frames, { duration: CONFIG.DIGIT_ROLL_MS, easing: "cubic-bezier(.3, .8, .3, 1)", fill: "forwards" });
+  animation.onfinish = () => {
+    if (slot.firstChild === column) slot.textContent = newDigit;
+  };
+}
+
+function setRollingText(element, newText, trend = 1) {
+  const previousText = element.dataset.text ?? element.textContent;
+  element.dataset.text = newText;
+  if (previousText === newText) return;
+  if (prefersReducedMotion) { element.textContent = newText; return; }
+
+  const previousCharacters = [...previousText];
+  const newCharacters = [...newText];
+  element.textContent = "";
+  newCharacters.forEach((character, index) => {
+    const slot = document.createElement("span");
+    slot.className = "digit-slot";
+    const previousCharacter = previousCharacters[previousCharacters.length - newCharacters.length + index] ?? "0";
+    if (isDigit(character) && isDigit(previousCharacter) && previousCharacter !== character) {
+      rollDigit(slot, previousCharacter, character, trend);
+    } else {
+      slot.textContent = character === " " ? "\u00A0" : character;
+    }
+    element.appendChild(slot);
+  });
+}
+
+function setRollingNumber(element, targetValue, { decimals = 0 } = {}) {
+  const format = decimals > 0 ? numberFormat : integerFormat;
+  const trend = targetValue >= Number(element.dataset.value ?? 0) ? 1 : -1;
+  element.dataset.value = targetValue;
+  setRollingText(element, format.format(targetValue), trend);
+}
+
+function renderKpis(metrics) {
+  const kpiElement = (name) => document.querySelector(`[data-kpi="${name}"]`);
+  setRollingNumber(kpiElement("autarkyPercent"), metrics.autarkyPercent);
+  setRollingNumber(kpiElement("selfConsumptionPercent"), metrics.selfConsumptionPercent);
+  setRollingNumber(kpiElement("yearlyBenefitEur"), Math.round(metrics.yearlyBenefitEur));
+
+  const paybackElement = kpiElement("paybackYears");
+  const paybackUnit = document.getElementById("payback-unit");
+  const years = metrics.paybackYears;
+  if (years === null) {
+    setRollingText(paybackElement, "–");
+    paybackUnit.textContent = "";
+  } else if (years > CONFIG.MAX_PAYBACK_YEARS_SHOWN) {
+    setRollingText(paybackElement, `> ${CONFIG.MAX_PAYBACK_YEARS_SHOWN}`);
+    paybackUnit.textContent = "Jahre";
+  } else {
+    setRollingNumber(paybackElement, years, { decimals: 1 });
+    paybackUnit.textContent = "Jahre";
+  }
+}
+
+function renderConfigLabels() {
+  document.getElementById("output-pv").textContent = `${numberFormat.format(state.pvKwp)} kWp`;
+  document.getElementById("output-battery").textContent = state.batteryKwh === 0 ? "kein Speicher" : `${numberFormat.format(state.batteryKwh)} kWh`;
+  document.getElementById("output-household").textContent = `${integerFormat.format(state.householdKwhPerYear)} kWh/Jahr`;
+}
+
+function renderAll() {
+  currentSimulation = simulateYear();
+  renderKpis(calculateMetrics(currentSimulation.totals));
+  renderDayChart();
+  renderFlowDiagram();
+  renderConfigLabels();
+}
+
+function setupSlider(inputId, range, stateKey) {
+  const input = document.getElementById(inputId);
+  Object.assign(input, { min: range.min, max: range.max, step: range.step, value: state[stateKey] });
+  input.addEventListener("input", () => { state[stateKey] = Number(input.value); renderAll(); });
+}
+
+function setupSwitch(inputId, stateKey) {
+  const input = document.getElementById(inputId);
+  input.addEventListener("change", () => { state[stateKey] = input.checked; renderAll(); });
+}
+
+function setPlaying(isPlaying) {
+  state.isPlaying = isPlaying;
+  clearInterval(playTimerId);
+  document.getElementById("play-button").textContent = isPlaying ? "❚❚ Pause" : "▶ Tag abspielen";
+  if (isPlaying) playTimerId = setInterval(() => { state.hour = (state.hour + 1) % 24; renderFlowDiagram(); }, CONFIG.PLAY_STEP_MS);
+}
+
+function applyImportedData(importedData, sourceLabel) {
+  state.importedData = importedData;
+  if (importedData) {
+    state.householdKwhPerYear = Math.round(importedData.annualLoadKwh / CONFIG.HOUSEHOLD_KWH.step) * CONFIG.HOUSEHOLD_KWH.step;
+  } else {
+    state.householdKwhPerYear = CONFIG.HOUSEHOLD_KWH.start;
+  }
+  const householdInput = document.getElementById("input-household");
+  householdInput.max = Math.max(CONFIG.HOUSEHOLD_KWH.max, state.householdKwhPerYear);
+  householdInput.value = state.householdKwhPerYear;
+  document.getElementById("data-source").textContent = sourceLabel;
+  document.getElementById("reset-import").hidden = !importedData;
+  renderAll();
+}
+
+function setupImport() {
+  const fileInput = document.getElementById("input-file");
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try { applyImportedData(parsePvSolCsv(String(reader.result)), file.name); }
+      catch (error) { document.getElementById("data-source").textContent = `Import fehlgeschlagen: ${error.message}`; }
+    };
+    reader.readAsText(file);
+    fileInput.value = "";
+  });
+  document.getElementById("reset-import").addEventListener("click", () => applyImportedData(null, CONFIG.PLACEHOLDER_SOURCE_LABEL));
+}
+
+
+function updateAssumptions() {
+  const orientationLabels = { S:"Süd", SO:"Südost", SW:"Südwest", O:"Ost", W:"West", NO:"Nordost", NW:"Nordwest", N:"Nord", FLAT:"Flachdach" };
+  document.getElementById("assumptions").textContent =
+    `Annahmen: Strompreis ${numberFormat.format(CONFIG.ELECTRICITY_PRICE_EUR_PER_KWH * 100)} ct/kWh, Einspeisevergütung ${numberFormat.format(state.feedInTariffEurPerKwh * 100)} ct/kWh, Ausrichtung ${orientationLabels[state.orientation]} (Ertragsfaktor ${numberFormat.format(CONFIG.ORIENTATION_YIELD[state.orientation] * 100)} %). Sonnen-Seasons: Winter Nov–Feb, Frühling Mär–Apr, Sommer Mai–Aug, Herbst Sep–Okt. Frühling und Herbst verwenden denselben repräsentativen Übergangsverlauf. Ohne CSV-Import sind die Tagesprofile synthetisch; alle Werte dienen der Veranschaulichung. Speicher max. ${CONFIG.BATTERY_MAX_POWER_KW} kW; die Wallbox lädt zuerst aus Solarüberschuss (max. ${CONFIG.WALLBOX_MAX_POWER_KW} kW), der Rest abends aus dem Netz; das Auto ist als stets angeschlossen angenommen.`;
+}
+
+function init() {
+  buildFlowDiagram();
+  buildDayChart();
+  setupSlider("input-pv", CONFIG.PV_KWP, "pvKwp");
+  setupSlider("input-battery", CONFIG.BATTERY_KWH, "batteryKwh");
+  setupSlider("input-household", CONFIG.HOUSEHOLD_KWH, "householdKwhPerYear");
+  setupSwitch("input-heat-pump", "heatPumpEnabled");
+  setupSwitch("input-ev", "evEnabled");
+  const feedInInput = document.getElementById("input-feed-in");
+  feedInInput.addEventListener("input", () => {
+    const cents = Number(String(feedInInput.value).replace(",", "."));
+    if (Number.isFinite(cents) && cents >= 0 && cents <= 30) {
+      state.feedInTariffEurPerKwh = cents / 100;
+      renderAll();
+      updateAssumptions();
+    }
+  });
+  document.getElementById("input-orientation").addEventListener("change", (event) => {
+    state.orientation = event.target.value;
+    renderAll();
+    updateAssumptions();
+  });
+  setupImport();
+  document.getElementById("input-hour").addEventListener("input", (event) => { state.hour = Number(event.target.value); renderFlowDiagram(); });
+  document.getElementById("play-button").addEventListener("click", () => setPlaying(!state.isPlaying));
+  const seasonButtons = document.querySelectorAll("#season-switch button");
+  seasonButtons.forEach((button) => button.addEventListener("click", () => {
+    state.season = button.dataset.season;
+    seasonButtons.forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
+    renderAll();
+  }));
+  const designButtons = document.querySelectorAll("#design-switch button");
+  designButtons.forEach((button) => button.addEventListener("click", () => {
+    state.design = button.dataset.design;
+    document.documentElement.dataset.design = state.design;
+    designButtons.forEach((other) => other.setAttribute("aria-pressed", String(other === button)));
+    buildFlowDiagram();
+    renderFlowDiagram();
+  }));
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    const root = document.documentElement;
+    const current = root.dataset.theme || "system";
+    const next = current === "system" ? "dark" : current === "dark" ? "light" : "system";
+    if (next === "system") delete root.dataset.theme; else root.dataset.theme = next;
+    document.getElementById("theme-toggle").textContent = `◐ Design: ${next === "system" ? "System" : next === "dark" ? "Dark" : "Light"}`;
+  });
+  updateAssumptions();
+  applyImportedData(null, CONFIG.PLACEHOLDER_SOURCE_LABEL);
+}
+
+init();
+</script>
+</body>
+</html>
